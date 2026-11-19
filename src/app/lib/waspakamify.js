@@ -32,7 +32,7 @@ function buildCampaignSendUrl() {
   return `${baseUrl}/integrations/campaigns/send`;
 }
 
-async function callWaspAkamify({ campaignName, destination, variables }) {
+async function callWaspAkamify({ campaignName, destination, variables, headerVariables }) {
   if (!isWhatsAppSendingEnabled()) {
     console.log("WaspAkamify send skipped: WHATSAPP_SENDING_ENABLED=false", {
       campaignName,
@@ -48,6 +48,7 @@ async function callWaspAkamify({ campaignName, destination, variables }) {
       {
         to: destination,
         variables: variables.map((value) => String(value ?? "")),
+        ...(headerVariables && { headerVariables }),
       },
     ],
   };
@@ -91,10 +92,26 @@ async function callWaspAkamify({ campaignName, destination, variables }) {
   throw new Error("WaspAkamify failed: " + text);
 }
 
+function getConfirmationVideoUrl() {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.QSTASH_TARGET_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL &&
+      `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+  const origin = URL.canParse(siteUrl) ? new URL(siteUrl) : null;
+
+  if (origin?.protocol !== "https:") {
+    throw new Error("WhatsApp confirmation video requires a public HTTPS site URL");
+  }
+
+  return new URL("/confirmation-template.mp4", origin).href;
+}
+
 export async function sendConfirmation({ name, email, phone10, webinarMeta }) {
   return callWaspAkamify({
     campaignName: requireEnv("WASPAKAMIFY_CAMPAIGN_CONFIRM"),
     destination: to91(phone10),
+    headerVariables: [getConfirmationVideoUrl()],
     // TEMPLATE: {{1}} name, {{2}} webinar name, {{3}} email, {{4}} phone, {{5}} date, {{6}} day, {{7}} time, {{8}} community URL
     variables: [
       name,

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import SuccessVideo from "./SuccessVideo";
 import {
   CheckCircle2,
   Users,
@@ -103,6 +104,8 @@ export default function ThankYouClient({ communityLink, eventName }) {
           </div>
 
           <div className="p-8 sm:p-12">
+            <SuccessVideo />
+
             {resolvedCommunityLink ? (
               <a
                 href={resolvedCommunityLink}
